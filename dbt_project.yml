@@ -86,3 +86,16 @@ vars:
   brownian_views_max_delta:  550
   brownian_viewsweek_min:   -0.10
   brownian_viewsweek_max:    0.20
+
+seeds:
+  ygo_data_engineering:
+    seed_raw_cards_dev:
+      +schema: bronze
+      +column_types:
+        ingesta_id: varchar
+        entorno: varchar
+        endpoint_url: varchar
+        http_status_code: integer
+        raw_payload: varchar
+        ingesta_ts: timestamp_ntz
+        es_mock: boolean
