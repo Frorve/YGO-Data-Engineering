@@ -2,12 +2,12 @@
 # Name your project! Project names should contain only lowercase characters
 # and underscores. A good package name should reflect your organization's
 # name or the intended use of these models
-name: 'YGO-Data'
+name: 'ygo_data_engineering'
 version: '1.0.0'
 config-version: 2
 
 # This setting configures which "profile" dbt uses for this project.
-profile: 'default'
+profile: 'ygo_data_engineering'
 
 # These configurations specify where dbt should look for different types of files.
 # The `model-paths` config, for example, states that models in this project can be
@@ -36,7 +36,53 @@ clean-targets:         # directories to be removed by `dbt clean`
 # using the `{{ config(...) }}` macro.
 
 models:
-  my_new_project:
-    # Applies to all files under models/example/
-    example:
+  ygo_data_engineering:
+    bronze:
+      raw:
+        +materialized: table
+        +schema: bronze
+        +tags: ["bronze", "raw"]
+        +description: "Capa RAW: almacena el JSON tal cual llega de la API de YGOPRODeck."
+      flat:
+        +materialized: incremental
+        +unique_key: "ingesta_id"
+        +on_schema_change: "sync_all_columns"
+        +schema: bronze
+        +tags: ["bronze", "flat"]
+        +description: "Capa FLAT: aplanado del JSON RAW con simulación Brownian Motion para DEV."
+
+    silver:
+      +materialized: incremental
+      +schema: silver
+      +tags: ["silver"]
+
+    gold:
       +materialized: table
+      +schema: gold
+      +tags: ["gold"]
+
+# Variables globales por entorno
+
+vars:
+  # Entorno activo: dev | pre | pro  (se sobreescribe con --vars en CLI)
+  env: "dev"
+
+  # Mock Brownian Motion activado únicamente en DEV
+  enable_brownian_mock: "{{ true if var('env') == 'dev' else false }}"
+
+  # Volatilidades por plataforma (usadas en macros de simulación)
+  brownian_volatility_cardmarket:  0.03
+  brownian_volatility_ebay:        0.08
+  brownian_volatility_tcgplayer:   0.05
+  brownian_volatility_amazon:      0.06
+  brownian_volatility_coolstuff:   0.04
+
+  # Límites de protección anti-colapso (% del precio original de la API)
+  brownian_floor_pct:    0.30
+  brownian_ceiling_pct:  4.00
+
+  # Volatilidad de views
+  brownian_views_min_delta:  50
+  brownian_views_max_delta:  550
+  brownian_viewsweek_min:   -0.10
+  brownian_viewsweek_max:    0.20

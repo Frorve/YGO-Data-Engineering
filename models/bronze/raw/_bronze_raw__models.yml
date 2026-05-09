@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: bronze_raw_cards
+    description: >
+      Tabla RAW que almacena la respuesta JSON completa de la API de YGOPRODeck.
+      Cada fila representa una ingesta de la API.
+      En DEV los datos proceden del seed seed_raw_cards_dev.
+      En PRE y PRO los datos proceden del pipeline de ingesta externo.
+    config:
+      tags: ['bronze', 'raw']
+    columns:
+      - name: ingesta_id
+        description: "Identificador único de la ejecución de ingesta (UUID v4)."
+        tests:
+          - not_null
+          - unique
+
+      - name: entorno
+        description: "Entorno que generó el registro: dev, pre o pro."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['dev', 'pre', 'pro']
+
+      - name: endpoint_url
+        description: "URL completa con parámetros usada en la llamada a la API de YGOPRODeck."
+        tests:
+          - not_null
+
+      - name: http_status_code
+        description: "Código de respuesta HTTP recibido de la API."
+        tests:
+          - not_null
+          - accepted_values:
+              values: [200, 400, 429, 500]
+
+      - name: raw_payload
+        description: "JSON completo devuelto por la API almacenado como VARCHAR."
+        tests:
+          - not_null
+
+      - name: ingesta_ts
+        description: "Timestamp UTC del momento de la ingesta."
+        tests:
+          - not_null
+
+      - name: es_mock
+        description: "TRUE si el registro es simulado. Solo puede ser TRUE en el entorno DEV."
+        tests:
+          - not_null
