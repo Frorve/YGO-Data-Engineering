@@ -1,0 +1,311 @@
+version: 2
+
+models:
+  - name: stg_cards
+    description: >
+      Staging de cartas. Limpia y tipifica de bronze_flat_cards. Una fila por cada ingesta de una carta concreta.
+      Es la fuente principal para los snapshots de precios y banlists.
+    config:
+      tags: ['silver', 'staging']
+    columns:
+      - name: ingesta_id
+        description: "Identificador único de la ingesta que generó este registro."
+        tests:
+          - not_null
+
+      - name: card_id
+        description: "Passcode de la carta. Identificador único en la API de YGOPRODeck."
+        tests:
+          - not_null
+
+      - name: entorno
+        description: "Entorno en el que se generó el registro: dev, pre o pro."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['dev', 'pre', 'pro']
+
+      - name: ingesta_ts
+        description: "Timestamp UTC del momento de la ingesta."
+        tests:
+          - not_null
+
+      - name: es_mock
+        description: "Indica si el registro procede de datos simulados."
+        tests:
+          - not_null
+
+      - name: card_name
+        description: "Nombre oficial de la carta en inglés."
+        tests:
+          - not_null
+
+      - name: card_type
+        description: "Tipo de carta: Normal Monster, Effect Monster, Spell Card, Trap Card, etc."
+        tests:
+          - not_null
+
+      - name: frame_type
+        description: "Tipo de marco visual de la carta: normal, effect, spell, trap, etc."
+        tests:
+          - not_null
+
+      - name: card_desc
+        description: "Texto del efecto o descripción de la carta."
+
+      - name: race
+        description: "Raza del monstruo o subtipo de Spell/Trap."
+
+      - name: attribute
+        description: "Atributo del monstruo: DARK, EARTH, FIRE, LIGHT, WATER, WIND, DIVINE."
+        tests:
+          - accepted_values:
+              values: ['DARK', 'EARTH', 'FIRE', 'LIGHT', 'WATER', 'WIND', 'DIVINE']
+              config:
+                where: "attribute IS NOT NULL"
+
+      - name: atk
+        description: "Puntos de ataque del monstruo. Null para Spell y Trap."
+
+      - name: def
+        description: "Puntos de defensa del monstruo. Null para Link Monsters, Spell y Trap."
+
+      - name: level
+        description: "Nivel o Rango del monstruo. Null para Link Monsters, Spell y Trap."
+
+      - name: archetype
+        description: "Arquetipo al que pertenece la carta."
+
+      - name: link_val
+        description: "Valor de Link. Solo presente en Link Monsters."
+
+      - name: pendulum_scale
+        description: "Valor de Escala Pendulum. Solo presente en cartas Pendulum."
+
+      - name: ygoprodeck_url
+        description: "URL de la carta en el sitio web de YGOPRODeck."
+
+      - name: cardmarket_price
+        description: "Precio en Cardmarket en euros."
+
+      - name: tcgplayer_price
+        description: "Precio en TCGPlayer en dólares."
+
+      - name: ebay_price
+        description: "Precio en eBay en dólares."
+
+      - name: amazon_price
+        description: "Precio en Amazon en dólares."
+
+      - name: coolstuffinc_price
+        description: "Precio en CoolStuffInc en dólares."
+
+      - name: ban_tcg
+        description: "Estado en el ban list del TCG: Forbidden, Limited o Semi-Limited. Null si no tiene restricción."
+        tests:
+          - accepted_values:
+              values: ['Forbidden', 'Limited', 'Semi-Limited']
+              config:
+                where: "ban_tcg IS NOT NULL"
+
+      - name: ban_ocg
+        description: "Estado en el ban list del OCG: Forbidden, Limited o Semi-Limited. Null si no tiene restricción."
+        tests:
+          - accepted_values:
+              values: ['Forbidden', 'Limited', 'Semi-Limited']
+              config:
+                where: "ban_ocg IS NOT NULL"
+
+      - name: ban_goat
+        description: "Estado en el ban list del formato GOAT. Null si no tiene restricción."
+
+      - name: views
+        description: "Total de vistas acumuladas de la carta en YGOPRODeck."
+
+      - name: viewsweek
+        description: "Vistas de la carta durante la semana actual."
+
+      - name: upvotes
+        description: "Número de votos positivos en YGOPRODeck."
+
+      - name: downvotes
+        description: "Número de votos negativos en YGOPRODeck."
+
+      - name: tcg_date
+        description: "Fecha de lanzamiento original de la carta en el TCG."
+
+      - name: ocg_date
+        description: "Fecha de lanzamiento original de la carta en el OCG."
+
+      - name: konami_id
+        description: "ID interno de Konami para la carta."
+
+      - name: has_effect
+        description: "Indica si la carta tiene efecto real: 1 tiene efecto, 0 no tiene efecto."
+        tests:
+          - accepted_values:
+              values: [0, 1]
+              config:
+                where: "has_effect IS NOT NULL"
+
+      - name: md_rarity
+        description: "Rareza de la carta en Master Duel."
+
+      - name: treated_as
+        description: "Nombre bajo el que se trata la carta en reglas."
+
+      - name: is_monster
+        description: "TRUE si la carta es de cualquier tipo de monstruo."
+        tests:
+          - not_null
+
+      - name: is_spell
+        description: "TRUE si la carta es de tipo Spell."
+        tests:
+          - not_null
+
+      - name: is_trap
+        description: "TRUE si la carta es de tipo Trap."
+        tests:
+          - not_null
+
+      - name: is_extra_deck
+        description: "TRUE si la carta pertenece al Extra Deck: Fusion, Synchro, XYZ o Link."
+        tests:
+          - not_null
+
+      - name: best_sell_price
+        description: "Precio de venta más alto entre eBay, TCGPlayer y Amazon."
+
+      - name: price_margin_pct
+        description: "Margen porcentual entre el mejor precio de venta y el precio de compra en Cardmarket."
+
+  - name: stg_card_sets
+    description: >
+      Staging de sets. Limpia y tipifica los registros procedentes de
+      bronze_flat_card_sets. Una fila por cada combinación de carta, set y rareza.
+    config:
+      tags: ['silver', 'staging']
+    columns:
+      - name: ingesta_id
+        description: "Identificador único de la ingesta que generó este registro."
+        tests:
+          - not_null
+
+      - name: card_id
+        description: "Passcode de la carta."
+        tests:
+          - not_null
+
+      - name: entorno
+        description: "Entorno en el que se generó el registro: dev, pre o pro."
+        tests:
+          - not_null
+
+      - name: ingesta_ts
+        description: "Timestamp UTC de la ingesta."
+        tests:
+          - not_null
+
+      - name: es_mock
+        description: "Indica si el registro procede de datos simulados."
+        tests:
+          - not_null
+
+      - name: card_name
+        description: "Nombre de la carta."
+        tests:
+          - not_null
+
+      - name: set_name
+        description: "Nombre completo del set."
+        tests:
+          - not_null
+
+      - name: set_code
+        description: "Código del set más número de carta."
+        tests:
+          - not_null
+
+      - name: set_rarity
+        description: "Rareza de la carta en este set."
+        tests:
+          - not_null
+
+      - name: set_rarity_code
+        description: "Código abreviado de la rareza."
+
+      - name: set_price
+        description: "Precio de la carta en este set en dólares."
+
+      - name: is_high_rarity
+        description: "TRUE si la rareza es Secret Rare, Ultra Rare o superior."
+        tests:
+          - not_null
+
+  - name: stg_card_images
+    description: >
+      Staging de imágenes. Limpia y tipifica los registros procedentes de
+      bronze_flat_card_images. Una fila por cada imagen o artwork de cada carta.
+    config:
+      tags: ['silver', 'staging']
+    columns:
+      - name: ingesta_id
+        description: "Identificador único de la ingesta que generó este registro."
+        tests:
+          - not_null
+
+      - name: card_id
+        description: "Passcode de la carta."
+        tests:
+          - not_null
+
+      - name: entorno
+        description: "Entorno en el que se generó el registro: dev, pre o pro."
+        tests:
+          - not_null
+
+      - name: ingesta_ts
+        description: "Timestamp UTC de la ingesta."
+        tests:
+          - not_null
+
+      - name: es_mock
+        description: "Indica si el registro procede de datos simulados."
+        tests:
+          - not_null
+
+      - name: card_name
+        description: "Nombre de la carta."
+        tests:
+          - not_null
+
+      - name: artwork_index
+        description: "Índice del artwork: 0 es el arte principal, mayor que 0 son artes alternativos."
+        tests:
+          - not_null
+
+      - name: image_id
+        description: "ID de la imagen en el servidor de YGOPRODeck."
+        tests:
+          - not_null
+
+      - name: image_url
+        description: "URL de la imagen en tamaño completo."
+        tests:
+          - not_null
+
+      - name: image_url_small
+        description: "URL de la imagen en tamaño reducido."
+        tests:
+          - not_null
+
+      - name: image_url_cropped
+        description: "URL de la imagen recortada mostrando solo el arte."
+        tests:
+          - not_null
+
+      - name: is_main_artwork
+        description: "TRUE si es el arte principal de la carta (artwork_index = 0)."
+        tests:
+          - not_null
