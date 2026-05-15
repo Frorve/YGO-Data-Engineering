@@ -38,6 +38,7 @@ clean-targets:         # directories to be removed by `dbt clean`
 models:
   ygo_data_engineering:
     bronze:
+      +database: BRONZE
       raw:
         +materialized: table
         +schema: bronze
@@ -52,12 +53,16 @@ models:
         +description: "Capa FLAT: aplanado del JSON RAW con simulación Brownian Motion para DEV."
 
     silver:
+      +database: SILVER
+      +on_schema_change: "fail"
       +materialized: incremental
       +schema: silver
       +tags: ["silver"]
 
     gold:
+      +database: GOLD
       +materialized: table
+      +on_schema_change: "fail"
       +schema: gold
       +tags: ["gold"]
 
