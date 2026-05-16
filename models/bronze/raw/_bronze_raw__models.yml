@@ -21,7 +21,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['dev', 'pre', 'pro']
+              arguments:
+                values: ['dev', 'pre', 'pro']
 
       - name: endpoint_url
         description: "URL completa con parámetros usada en la llamada a la API de YGOPRODeck."
@@ -33,7 +34,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [200, 400, 429, 500]
+              arguments:
+                values: [200, 400, 429, 500]
 
       - name: raw_payload
         description: "JSON completo devuelto por la API almacenado como VARCHAR."
