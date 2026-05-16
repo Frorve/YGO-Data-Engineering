@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: raw_ingesta
     description: "Tabla raw obtenida por el pipeline de ingesta externo que consume la API de YGOPRODeck. Solo disponible en entornos PRE y PRO."
-    database: "{{ env_var('DBT_DATABASE', 'DEV_BRONZE_YGO_DB') }}"
+    database: "{{ var('env') | upper }}_BRONZE_YGO_DB"
     schema: landing
     tables:
       - name: raw_api_ingestas
