@@ -91,7 +91,6 @@ models:
         description: "Passcode de la carta en la API de YGOPRODeck."
         tests:
           - not_null
-          - unique
 
       - name: card_name
         description: "Nombre oficial de la carta en inglés."

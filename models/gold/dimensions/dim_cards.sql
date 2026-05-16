@@ -39,6 +39,10 @@ WITH cartas AS (
         tcg_date,
         ocg_date
     FROM {{ ref('stg_cards') }}
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY card_id
+        ORDER BY ingesta_ts DESC
+    ) = 1
 
 ),
 
