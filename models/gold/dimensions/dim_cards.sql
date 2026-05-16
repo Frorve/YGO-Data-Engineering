@@ -78,8 +78,7 @@ imagen_principal AS (
         ORDER BY ingesta_ts DESC
     ) = 1
 
-),
-
+)
 
 SELECT
     -- ── Surrogate key ─────────────────────────────────────────────────────
@@ -89,7 +88,7 @@ SELECT
     c.card_id,
     c.card_name,
 
-    -- ── Clasificación ────────────────────────────────────────────────────
+    -- ── Clasificación ─────────────────────────────────────────────────────
     c.card_type,
     c.race,
     c.attribute,
