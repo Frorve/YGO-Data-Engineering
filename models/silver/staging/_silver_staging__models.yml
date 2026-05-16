@@ -59,7 +59,7 @@ models:
           - not_null
           - accepted_values:
               arguments:
-                values: ['Monster', 'Spell', 'Trap']
+                values: ['Monster', 'Spell', 'Trap', 'Skill']
 
   - name: ref_attributes
     description: >
