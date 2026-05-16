@@ -72,8 +72,8 @@ vars:
   # Entorno activo: dev | pre | pro  (se sobreescribe con --vars en CLI)
   env: "dev"
 
-  # Mock Brownian Motion activado únicamente en DEV
-  enable_brownian_mock: "{{ true if var('env') == 'dev' else false }}"
+  # Mock Brownian Motion activado
+  enable_brownian_mock: true
 
   # Volatilidades por plataforma (usadas en macros de simulación)
   brownian_volatility_cardmarket:  0.03
