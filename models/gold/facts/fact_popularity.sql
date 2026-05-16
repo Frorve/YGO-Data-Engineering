@@ -37,6 +37,10 @@ WITH cartas AS (
         upvotes,
         downvotes
     FROM {{ ref('stg_cards') }}
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY card_id
+        ORDER BY ingesta_ts DESC
+    ) = 1
 
 ),
 
