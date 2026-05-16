@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: raw_ingesta
+    description: "Tabla raw obtenida por el pipeline de ingesta externo que consume la API de YGOPRODeck. Solo disponible en entornos PRE y PRO."
+    database: "{{ env_var('DBT_DATABASE', 'DEV_BRONZE_YGO_DB') }}"
+    schema: landing
+    tables:
+      - name: raw_api_ingestas
+        description: "Cada fila es una llamada a la API de YGOPRODeck. El payload JSON completo se almacena en raw_payload como VARCHAR."
+        columns:
+          - name: ingesta_id
+            description: "Identificador único de la ingesta (UUID v4)."
+          - name: entorno
+            description: "Entorno que generó el registro: pre o pro."
+          - name: endpoint_url
+            description: "URL completa usada en la llamada a la API."
+          - name: http_status_code
+            description: "Código de respuesta HTTP recibido."
+          - name: raw_payload
+            description: "JSON completo devuelto por la API almacenado como VARCHAR."
+          - name: ingesta_ts
+            description: "Timestamp UTC del momento de la ingesta."
+          - name: es_mock
+            description: "Siempre FALSE en entornos de PRE y PRO."
