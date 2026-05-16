@@ -1,0 +1,269 @@
+version: 2
+
+models:
+
+  - name: fact_price_history
+    description: >
+      Tabla de hechos con el historial completo de precios de cada carta.
+      Una fila por cada período de vigencia de un precio detectado por el snapshot.
+      Alimenta CU1 (evolución de precios) y CU4 (valoración de colección).
+      Se relaciona con dim_cards a través de card_sk y con dim_fecha a través de fecha_sk.
+    config:
+      tags: ['gold', 'fact']
+    columns:
+      - name: price_history_sk
+        description: "Surrogate key numérica generada en Gold con ROW_NUMBER()."
+        tests:
+          - not_null
+          - unique
+
+      - name: card_sk
+        description: "FK hacia dim_cards."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_cards')
+              field: card_sk
+
+      - name: fecha_sk
+        description: "FK hacia dim_fecha. Corresponde a la fecha de inicio de vigencia del precio."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_fecha')
+              field: fecha_sk
+
+      - name: card_id
+        description: "Passcode de la carta."
+        tests:
+          - not_null
+
+      - name: cardmarket_price
+        description: "Precio en Cardmarket en euros."
+
+      - name: tcgplayer_price
+        description: "Precio en TCGPlayer en dólares."
+
+      - name: ebay_price
+        description: "Precio en eBay en dólares."
+
+      - name: amazon_price
+        description: "Precio en Amazon en dólares."
+
+      - name: coolstuffinc_price
+        description: "Precio en CoolStuffInc en dólares."
+
+      - name: best_sell_price
+        description: "Mejor precio de venta entre eBay, TCGPlayer y Amazon."
+
+      - name: price_margin_pct
+        description: "Margen porcentual entre el mejor precio de venta y Cardmarket."
+
+      - name: valid_from
+        description: "Timestamp de inicio de vigencia de este precio."
+        tests:
+          - not_null
+
+      - name: valid_to
+        description: "Timestamp de fin de vigencia de este precio. NULL si es el precio actual."
+
+      - name: is_current
+        description: "TRUE si este es el precio vigente hoy."
+        tests:
+          - not_null
+
+  - name: fact_arbitrage_iva
+    description: >
+      Tabla de hechos con el Índice de Viabilidad de Arbitraje (IVA) calculado por carta.
+      Una fila por carta con el IVA calculado sobre los precios vigentes.
+      Alimenta CU2 (análisis de oportunidades de arbitraje).
+      Se relaciona con dim_cards a través de card_sk y con dim_fecha a través de fecha_sk.
+    config:
+      tags: ['gold', 'fact']
+    columns:
+      - name: arbitrage_sk
+        description: "Surrogate key numérica generada en Gold con ROW_NUMBER()."
+        tests:
+          - not_null
+          - unique
+
+      - name: card_sk
+        description: "FK hacia dim_cards."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_cards')
+              field: card_sk
+
+      - name: fecha_sk
+        description: "FK hacia dim_fecha. Corresponde a la fecha de cálculo del IVA."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_fecha')
+              field: fecha_sk
+
+      - name: card_id
+        description: "Passcode de la carta."
+        tests:
+          - not_null
+
+      - name: card_name
+        description: "Nombre de la carta."
+        tests:
+          - not_null
+
+      - name: cardmarket_price
+        description: "Precio de compra en Cardmarket en euros."
+
+      - name: best_sell_price
+        description: "Mejor precio de venta entre eBay, TCGPlayer y Amazon."
+
+      - name: price_margin_pct
+        description: "Margen porcentual bruto de arbitraje."
+
+      - name: factor_demanda
+        description: >
+          Demanda relativa de la carta normalizada entre 0 y 1.
+          Calculado como viewsweek / MAX(viewsweek) sobre todas las cartas.
+        tests:
+          - not_null
+
+      - name: penalizacion_precio
+        description: >
+          Penalización por precio bajo. 
+          0.5 si cardmarket_price menor o igual a 0.10 euros.
+          1.0 si cardmarket_price mayor a 0.10 euros.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0.5, 1.0]
+
+      - name: ban_penalty_tcg
+        description: >
+          Factor de penalización por ban list.
+          Forbidden = 0.0, Limited = 0.4, Semi-Limited = 0.7, Unlimited = 1.0.
+        tests:
+          - not_null
+
+      - name: iva_score
+        description: >
+          Score final del IVA entre 0 y 1.
+          Calculado como price_margin_pct x factor_demanda x penalizacion_precio x ban_penalty_tcg.
+        tests:
+          - not_null
+
+      - name: iva_semaforo
+        description: "Clasificación del IVA. Alta si mayor a 0.7, Media si entre 0.3 y 0.7, Baja si menor a 0.3."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Alta', 'Media', 'Baja']
+
+      - name: plataforma_optima
+        description: "Plataforma de venta con el precio más alto entre eBay, TCGPlayer y Amazon."
+        tests:
+          - not_null
+
+      - name: is_current
+        description: "TRUE si el IVA está calculado sobre precios vigentes hoy."
+        tests:
+          - not_null
+
+  - name: fact_popularity
+    description: >
+      Tabla de hechos con las métricas de popularidad y demanda de cada carta.
+      Una fila por carta con las métricas de popularidad vigentes.
+      Alimenta CU3 (análisis de popularidad y demanda).
+      Se relaciona con dim_cards, dim_archetypes y dim_fecha.
+    config:
+      tags: ['gold', 'fact']
+    columns:
+      - name: popularity_sk
+        description: "Surrogate key numérica generada en Gold con ROW_NUMBER()."
+        tests:
+          - not_null
+          - unique
+
+      - name: card_sk
+        description: "FK hacia dim_cards."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_cards')
+              field: card_sk
+
+      - name: archetype_sk
+        description: "FK hacia dim_archetypes. Null si la carta no pertenece a ningún arquetipo."
+        tests:
+          - relationships:
+              to: ref('dim_archetypes')
+              field: archetype_sk
+              config:
+                where: "archetype_sk IS NOT NULL"
+
+      - name: fecha_sk
+        description: "FK hacia dim_fecha. Corresponde a la fecha de captura de las métricas."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_fecha')
+              field: fecha_sk
+
+      - name: card_id
+        description: "Passcode de la carta."
+        tests:
+          - not_null
+
+      - name: card_name
+        description: "Nombre de la carta."
+        tests:
+          - not_null
+
+      - name: views
+        description: "Total de vistas acumuladas de la carta en YGOPRODeck."
+
+      - name: viewsweek
+        description: "Vistas de la carta durante la semana actual."
+
+      - name: upvotes
+        description: "Número de votos positivos en YGOPRODeck."
+
+      - name: downvotes
+        description: "Número de votos negativos en YGOPRODeck."
+
+      - name: ratio_positivo
+        description: >
+          Ratio de votos positivos sobre el total de votos.
+          Calculado como upvotes / (upvotes + downvotes).
+          Null si no hay votos.
+
+      - name: tendencia_views
+        description: >
+          Tendencia de popularidad de la carta basada en viewsweek vs media global.
+          Valores posibles: SUBIENDO, ESTABLE, BAJANDO.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['SUBIENDO', 'ESTABLE', 'BAJANDO']
+
+      - name: ban_tcg
+        description: "Estado en el ban list del TCG. Contexto para el análisis de popularidad."
+
+      - name: is_banned_anywhere
+        description: "TRUE si la carta está Forbidden en TCG o en OCG."
+        tests:
+          - not_null
+
+      - name: ban_penalty_tcg
+        description: "Factor de penalización del IVA según el estado en el ban list del TCG."
+        tests:
+          - not_null
+
+      - name: is_current
+        description: "TRUE si las métricas corresponden al snapshot más reciente."
+        tests:
+          - not_null
