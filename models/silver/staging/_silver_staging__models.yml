@@ -2,7 +2,137 @@ version: 2
 
 models:
 
-# ============================================================
+  # ============================================================
+  # TABLAS DE REFERENCIA (sin incrementalidad)
+  # ============================================================
+
+  - name: ref_card_types
+    description: >
+      Catálogo de tipos de carta disponibles en el universo Yu-Gi-Oh.
+      Tabla de referencia estática con todos los tipos conocidos de la API de YGOPRODeck.
+      No tiene incrementalidad. Se reconstruye completa en cada ejecución.
+    config:
+      tags: ['silver', 'ref']
+    columns:
+      - name: card_type_id
+        description: "Identificador del tipo de carta. Coincide con el valor exacto devuelto por la API."
+        tests:
+          - not_null
+          - unique
+
+      - name: descripcion
+        description: "Descripción legible del tipo de carta."
+        tests:
+          - not_null
+
+      - name: categoria
+        description: "Agrupación del tipo de carta. Valores posibles: Monster, Spell, Trap, Token, Skill."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Monster', 'Spell', 'Trap', 'Token', 'Skill']
+
+  - name: ref_races
+    description: >
+      Catálogo de razas de monstruos y subtipos de Spell y Trap en Yu-Gi-Oh.
+      Para monstruos indica el tipo de criatura. Para Spell y Trap indica el subtipo
+      de la carta (Normal, Field, Equip, Counter, etc.).
+      Tabla de referencia estática. No tiene incrementalidad.
+    config:
+      tags: ['silver', 'ref']
+    columns:
+      - name: race_id
+        description: "Identificador de la raza o subtipo. Coincide con el valor exacto devuelto por la API."
+        tests:
+          - not_null
+          - unique
+
+      - name: descripcion
+        description: "Descripción legible de la raza o subtipo."
+        tests:
+          - not_null
+
+      - name: aplica_a
+        description: "Indica a qué tipo de carta aplica esta raza. Valores posibles: Monster, Spell, Trap."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Monster', 'Spell', 'Trap', 'Skill']
+
+  - name: ref_attributes
+    description: >
+      Catálogo de atributos de los monstruos en Yu-Gi-Oh.
+      El atributo determina la naturaleza elemental del monstruo.
+      Solo aplica a cartas de tipo monstruo, las cartas Spell y Trap no tienen atributo.
+      Tabla de referencia estática. No tiene incrementalidad.
+    config:
+      tags: ['silver', 'ref']
+    columns:
+      - name: attribute_id
+        description: "Identificador del atributo. Coincide con el valor exacto devuelto por la API."
+        tests:
+          - not_null
+          - unique
+
+      - name: descripcion
+        description: "Descripción legible del atributo."
+        tests:
+          - not_null
+
+  - name: ref_ban_status
+    description: >
+      Catálogo de estados posibles en el ban list de Yu-Gi-Oh.
+      Aplica a los tres formatos principales: TCG, OCG y GOAT.
+      El estado determina cuántas copias de una carta se pueden incluir en el mazo.
+      Tabla de referencia estática. No tiene incrementalidad.
+    config:
+      tags: ['silver', 'ref']
+    columns:
+      - name: ban_status_id
+        description: "Identificador del estado de ban. Coincide con el valor exacto devuelto por la API."
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              arguments:
+                values: ['Forbidden', 'Limited', 'Semi-Limited', 'Unlimited']
+
+      - name: descripcion
+        description: "Descripción legible del estado de ban."
+        tests:
+          - not_null
+
+      - name: copias_permitidas
+        description: "Número máximo de copias permitidas en el mazo."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3]
+
+  - name: ref_archetypes
+    description: >
+      Catálogo de arquetipos existentes en Yu-Gi-Oh extraídos de los datos de la API.
+      Se construye dinámicamente desde bronze_flat_cards.
+      Konami añade nuevos arquetipos constantemente.
+      No tiene incrementalidad, se reconstruye completa en cada ejecución.
+    config:
+      tags: ['silver', 'ref']
+    columns:
+      - name: archetype_id
+        description: "Nombre del arquetipo. Coincide con el valor exacto devuelto por la API."
+        tests:
+          - not_null
+          - unique
+
+      - name: descripcion
+        description: "Descripción del arquetipo. Igual al archetype_id ya que la API no provee descripción adicional."
+        tests:
+          - not_null
+
+  # ============================================================
   # TABLAS DE STAGING
   # ============================================================
 
@@ -88,7 +218,8 @@ models:
         description: "Indica si la carta tiene efecto real: 1 tiene efecto, 0 no tiene efecto."
         tests:
           - accepted_values:
-              values: [0, 1]
+              arguments:
+                values: [0, 1]
               config:
                 where: "has_effect IS NOT NULL"
 

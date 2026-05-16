@@ -20,7 +20,8 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['dev', 'pre', 'pro']
+              arguments:
+                values: ['dev', 'pre', 'pro']
 
       - name: ingesta_ts
         description: "Timestamp UTC del momento de la ingesta."
@@ -52,10 +53,11 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['normal', 'effect', 'ritual', 'fusion', 'synchro', 'xyz', 'link',
-                       'normal_pendulum', 'effect_pendulum', 'ritual_pendulum',
-                       'fusion_pendulum', 'synchro_pendulum', 'xyz_pendulum',
-                       'spell', 'trap', 'token', 'skill']
+              arguments:
+                values: ['normal', 'effect', 'ritual', 'fusion', 'synchro', 'xyz', 'link',
+                         'normal_pendulum', 'effect_pendulum', 'ritual_pendulum',
+                         'fusion_pendulum', 'synchro_pendulum', 'xyz_pendulum',
+                         'spell', 'trap', 'token', 'skill']
 
       - name: card_desc
         description: "Texto del efecto o descripción de la carta."
@@ -67,7 +69,8 @@ models:
         description: "Atributo del monstruo: DARK, EARTH, FIRE, LIGHT, WATER, WIND, DIVINE. Null para Spell y Trap."
         tests:
           - accepted_values:
-              values: ['DARK', 'EARTH', 'FIRE', 'LIGHT', 'WATER', 'WIND', 'DIVINE']
+              arguments:
+                values: ['DARK', 'EARTH', 'FIRE', 'LIGHT', 'WATER', 'WIND', 'DIVINE']
               config:
                 where: "attribute IS NOT NULL"
 
@@ -111,7 +114,8 @@ models:
         description: "Estado en el ban list del TCG: Forbidden, Limited o Semi-Limited. Null si no tiene restricción."
         tests:
           - accepted_values:
-              values: ['Forbidden', 'Limited', 'Semi-Limited']
+              arguments:
+                values: ['Forbidden', 'Limited', 'Semi-Limited']
               config:
                 where: "ban_tcg IS NOT NULL"
 
@@ -119,7 +123,8 @@ models:
         description: "Estado en el ban list del OCG: Forbidden, Limited o Semi-Limited. Null si no tiene restricción."
         tests:
           - accepted_values:
-              values: ['Forbidden', 'Limited', 'Semi-Limited']
+              arguments:
+                values: ['Forbidden', 'Limited', 'Semi-Limited']
               config:
                 where: "ban_ocg IS NOT NULL"
 
@@ -151,7 +156,8 @@ models:
         description: "Indica si la carta tiene efecto real: 1 tiene efecto, 0 no tiene efecto."
         tests:
           - accepted_values:
-              values: [0, 1]
+              arguments:
+                values: [0, 1]
               config:
                 where: "has_effect IS NOT NULL"
 
@@ -188,6 +194,9 @@ models:
         description: "Entorno en el que se generó el registro: dev, pre o pro."
         tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['dev', 'pre', 'pro']
 
       - name: es_mock
         description: "Indica si el payload RAW de origen es simulado."
@@ -252,6 +261,9 @@ models:
         description: "Entorno en el que se generó el registro: dev, pre o pro."
         tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['dev', 'pre', 'pro']
 
       - name: es_mock
         description: "Indica si el payload RAW de origen es simulado."
