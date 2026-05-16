@@ -14,6 +14,10 @@
     de uso en los casos de uso actuales.
     Solo incluye campos que alimentan directamente CU1, CU2, CU3 o CU4.
     Se reconstruye completa en cada ejecución.
+
+    NULLIF aplicado en race_id, attribute_id y archetype_id para convertir
+    strings vacíos a NULL. La API puede devolver '' en lugar de NULL
+    para cartas sin raza, atributo o arquetipo definido.
 */
 
 SELECT
@@ -28,9 +32,9 @@ SELECT
 
     -- ── Clasificación (FKs hacia tablas ref_) ────────────────────────────
     card_type                                           AS card_type_id,
-    race                                                AS race_id,
-    attribute                                           AS attribute_id,
-    archetype                                           AS archetype_id,
+    NULLIF(TRIM(race), '')                              AS race_id,
+    NULLIF(TRIM(attribute), '')                         AS attribute_id,
+    NULLIF(TRIM(archetype), '')                         AS archetype_id,
 
     -- ── Estadísticas de combate ───────────────────────────────────────────
     atk,
