@@ -5,18 +5,18 @@ models:
     description: >
       Modelo FLAT principal con los campos escalares de cada carta aplanados desde el JSON RAW.
       Cada fila representa una ingesta de la API para una carta concreta.
-      En DEV los precios y views se simulan mediante Brownian Motion.
-      En PRE y PRO se usan los valores reales de la API.
+      Los precios y views se simulan mediante Brownian Motion cuando enable_brownian_mock es true.
+      Se conservan siempre los valores originales de la API en columnas con prefijo api_.
     config:
       tags: ['bronze', 'flat']
     columns:
       - name: ingesta_id
-        description: "Identificador único de la ingesta que generó este snapshot."
+        description: "Identificador único de la ingesta que generó este registro."
         tests:
           - not_null
 
       - name: entorno
-        description: "Entorno en el que se generó el snapshot: dev, pre o pro."
+        description: "Entorno en el que se generó el registro: dev, pre o pro."
         tests:
           - not_null
           - accepted_values:
@@ -30,6 +30,11 @@ models:
 
       - name: es_mock
         description: "Indica si el payload RAW de origen es simulado."
+        tests:
+          - not_null
+
+      - name: is_mocked
+        description: "TRUE si los precios y views han sido simulados con Brownian Motion."
         tests:
           - not_null
 
@@ -63,7 +68,7 @@ models:
         description: "Texto del efecto o descripción de la carta."
 
       - name: race
-        description: "Raza del monstruo (Spellcaster, Dragon, Warrior...) o subtipo de Spell/Trap (Normal, Field, Equip...)."
+        description: "Raza del monstruo o subtipo de Spell/Trap."
 
       - name: attribute
         description: "Atributo del monstruo: DARK, EARTH, FIRE, LIGHT, WATER, WIND, DIVINE. Null para Spell y Trap."
@@ -95,20 +100,35 @@ models:
       - name: ygoprodeck_url
         description: "URL de la carta en el sitio web de YGOPRODeck."
 
+      - name: api_cardmarket_price
+        description: "Precio original de Cardmarket en euros tal como lo devuelve la API. Nunca modificado."
+
+      - name: api_tcgplayer_price
+        description: "Precio original de TCGPlayer en dólares tal como lo devuelve la API. Nunca modificado."
+
+      - name: api_ebay_price
+        description: "Precio original de eBay en dólares tal como lo devuelve la API. Nunca modificado."
+
+      - name: api_amazon_price
+        description: "Precio original de Amazon en dólares tal como lo devuelve la API. Nunca modificado."
+
+      - name: api_coolstuffinc_price
+        description: "Precio original de CoolStuffInc en dólares tal como lo devuelve la API. Nunca modificado."
+
       - name: cardmarket_price
-        description: "Precio en Cardmarket en euros. En DEV simulado con Brownian Motion."
+        description: "Precio efectivo de Cardmarket para este snapshot. Simulado con Brownian Motion si is_mocked es TRUE."
 
       - name: tcgplayer_price
-        description: "Precio en TCGPlayer en dólares. En DEV simulado con Brownian Motion."
+        description: "Precio efectivo de TCGPlayer para este snapshot. Simulado con Brownian Motion si is_mocked es TRUE."
 
       - name: ebay_price
-        description: "Precio en eBay en dólares. En DEV simulado con Brownian Motion."
+        description: "Precio efectivo de eBay para este snapshot. Simulado con Brownian Motion si is_mocked es TRUE."
 
       - name: amazon_price
-        description: "Precio en Amazon en dólares. En DEV simulado con Brownian Motion."
+        description: "Precio efectivo de Amazon para este snapshot. Simulado con Brownian Motion si is_mocked es TRUE."
 
       - name: coolstuffinc_price
-        description: "Precio en CoolStuffInc en dólares. En DEV simulado con Brownian Motion."
+        description: "Precio efectivo de CoolStuffInc para este snapshot. Simulado con Brownian Motion si is_mocked es TRUE."
 
       - name: ban_tcg
         description: "Estado en el ban list del TCG: Forbidden, Limited o Semi-Limited. Null si no tiene restricción."
@@ -131,11 +151,17 @@ models:
       - name: ban_goat
         description: "Estado en el ban list del formato GOAT. Null si no tiene restricción."
 
+      - name: api_views
+        description: "Total de vistas acumuladas original de la API. Nunca modificado."
+
+      - name: api_viewsweek
+        description: "Vistas semanales original de la API. Nunca modificado."
+
       - name: views
-        description: "Total de vistas acumuladas de la carta en YGOPRODeck. En DEV simulado con Brownian Motion."
+        description: "Vistas acumuladas efectivas para este snapshot. Simulado con Brownian Motion si is_mocked es TRUE."
 
       - name: viewsweek
-        description: "Vistas de la carta durante la semana actual. En DEV simulado con Brownian Motion."
+        description: "Vistas semanales efectivas para este snapshot. Simulado con Brownian Motion si is_mocked es TRUE."
 
       - name: upvotes
         description: "Número de votos positivos en YGOPRODeck."
@@ -165,7 +191,7 @@ models:
         description: "Rareza de la carta en el videojuego Master Duel."
 
       - name: treated_as
-        description: "Nombre bajo el que se trata la carta en reglas. Relevante para cartas como Harpie Lady 1/2/3."
+        description: "Nombre bajo el que se trata la carta en reglas."
 
       - name: flat_processed_ts
         description: "Timestamp UTC del momento en que dbt procesó el aplanado."
@@ -214,22 +240,22 @@ models:
           - not_null
 
       - name: set_name
-        description: "Nombre completo del set: Legend of Blue Eyes White Dragon, Metal Raiders, etc."
+        description: "Nombre completo del set."
         tests:
           - not_null
 
       - name: set_code
-        description: "Código del set más número de carta: LOB-005, SDY-006, etc."
+        description: "Código del set más número de carta."
         tests:
           - not_null
 
       - name: set_rarity
-        description: "Rareza de la carta en este set: Ultra Rare, Secret Rare, Common, etc."
+        description: "Rareza de la carta en este set."
         tests:
           - not_null
 
       - name: set_rarity_code
-        description: "Código abreviado de la rareza: (UR), (ScR), (C), etc."
+        description: "Código abreviado de la rareza."
 
       - name: set_price
         description: "Precio de la carta en este set en dólares según TCGPlayer."
