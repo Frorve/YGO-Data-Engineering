@@ -50,7 +50,7 @@ total_sets AS (
 
     SELECT
         card_id,
-        COUNT(DISTINCT set_code)    AS total_sets
+        COUNT(DISTINCT set_code)            AS total_sets
     FROM {{ ref('stg_card_sets') }}
     GROUP BY card_id
 
@@ -60,7 +60,7 @@ total_artworks AS (
 
     SELECT
         card_id,
-        COUNT(*)                    AS total_artworks
+        COUNT(DISTINCT image_id)            AS total_artworks
     FROM {{ ref('stg_card_images') }}
     GROUP BY card_id
 
@@ -73,8 +73,13 @@ imagen_principal AS (
         image_url
     FROM {{ ref('stg_card_images') }}
     WHERE is_main_artwork = TRUE
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY card_id
+        ORDER BY ingesta_ts DESC
+    ) = 1
 
-)
+),
+
 
 SELECT
     -- ── Surrogate key ─────────────────────────────────────────────────────
