@@ -16,8 +16,7 @@
     Se reconstruye completa en cada ejecución.
 
     NULLIF aplicado en race_id, attribute_id y archetype_id para convertir
-    strings vacíos a NULL. La API puede devolver '' en lugar de NULL
-    para cartas sin raza, atributo o arquetipo definido.
+    strings vacíos a NULL.
 */
 
 SELECT

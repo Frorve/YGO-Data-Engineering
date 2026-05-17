@@ -62,13 +62,24 @@ popularidad AS (
         card_id,
         viewsweek
     FROM {{ ref('stg_cards') }}
+    QUALIFY ROW_NUMBER() OVER (
+        PARTITION BY card_id
+        ORDER BY ingesta_ts DESC
+    ) = 1
 
 ),
 
 max_viewsweek AS (
 
     SELECT MAX(viewsweek) AS max_views
-    FROM {{ ref('stg_cards') }}
+    FROM (
+        SELECT card_id, viewsweek
+        FROM {{ ref('stg_cards') }}
+        QUALIFY ROW_NUMBER() OVER (
+            PARTITION BY card_id
+            ORDER BY ingesta_ts DESC
+        ) = 1
+    )
     WHERE viewsweek IS NOT NULL
 
 ),

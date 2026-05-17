@@ -16,15 +16,8 @@
     Se reconstruye completa en cada ejecución.
 
     Precios:
-      cardmarket_price → precio de compra en Europa (€)
-      tcgplayer_price  → precio de venta potencial ($)
-      ebay_price       → precio de venta potencial ($)
-      amazon_price     → precio de venta potencial ($)
-      coolstuffinc_price → precio de venta potencial ($)
-
-    Campos calculados:
-      best_sell_price  → MAX(ebay, tcgplayer, amazon)
-      price_margin_pct → (best_sell_price - cardmarket_price) / cardmarket_price
+      cardmarket_price → precio efectivo del snapshot (simulado o real)
+      api_*_price      → precio original de la API sin modificar
 */
 
 SELECT
@@ -34,7 +27,7 @@ SELECT
     ingesta_ts,
     es_mock,
 
-    -- ── Precios originales ────────────────────────────────────────────────
+    -- ── Precios efectivos del snapshot ───────────────────────────────────
     cardmarket_price,
     tcgplayer_price,
     ebay_price,
@@ -49,7 +42,6 @@ SELECT
     )                                                   AS best_sell_price,
 
     -- ── Margen de arbitraje ───────────────────────────────────────────────
-    -- Null si cardmarket_price es null o 0 para evitar división por cero
     CASE
         WHEN cardmarket_price IS NULL OR cardmarket_price = 0 THEN NULL
         ELSE ROUND(
