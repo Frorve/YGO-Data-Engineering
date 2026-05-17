@@ -1,0 +1,252 @@
+version: 2
+
+models:
+
+  - name: dim_fecha
+    description: >
+      Dimensión de fechas generada sintéticamente para el modelo dimensional de Gold.
+      Cubre el rango desde 2002-01-01 (primer lanzamiento TCG) hasta 2030-12-31.
+      No tiene dependencias de Bronze ni Silver, se genera directamente en dbt.
+      Usada en todas las tablas de hechos para análisis temporal.
+    config:
+      tags: ['gold', 'dimension']
+    columns:
+      - name: fecha_sk
+        description: "Surrogate key numérica en formato YYYYMMDD. Ej: 20240115."
+        tests:
+          - not_null
+          - unique
+
+      - name: fecha_date
+        description: "Fecha completa en formato DATE."
+        tests:
+          - not_null
+          - unique
+
+      - name: anio
+        description: "Año de la fecha. Ej: 2024."
+        tests:
+          - not_null
+
+      - name: trimestre
+        description: "Trimestre del año: 1, 2, 3 o 4."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+
+      - name: mes
+        description: "Mes del año: 1 a 12."
+        tests:
+          - not_null
+
+      - name: mes_nombre
+        description: "Nombre del mes en inglés. Ej: January, February."
+        tests:
+          - not_null
+
+      - name: semana
+        description: "Número de semana del año: 1 a 53."
+        tests:
+          - not_null
+
+      - name: dia_semana
+        description: "Número del día de la semana: 0 (domingo) a 6 (sábado)."
+        tests:
+          - not_null
+
+      - name: dia_nombre
+        description: "Nombre del día en inglés. Ej: Monday, Tuesday."
+        tests:
+          - not_null
+
+      - name: dia
+        description: "Día del mes: 1 a 31."
+        tests:
+          - not_null
+
+      - name: es_fin_de_semana
+        description: "TRUE si el día es sábado o domingo."
+        tests:
+          - not_null
+
+  - name: dim_cards
+    description: >
+      Dimensión principal de cartas del universo Yu-Gi-Oh.
+      Una fila por carta única con sus atributos estables.
+      Incluye atributos enriquecidos calculados en Gold como total de sets,
+      total de artworks e imagen principal para visualización en PowerBI.
+      Es la dimensión central del modelo dimensional, todas las facts la referencian.
+    config:
+      tags: ['gold', 'dimension']
+    columns:
+      - name: card_sk
+        description: "Surrogate key numérica generada en Gold con ROW_NUMBER()."
+        tests:
+          - not_null
+          - unique
+
+      - name: card_id
+        description: "Passcode de la carta en la API de YGOPRODeck."
+        tests:
+          - not_null
+
+      - name: card_name
+        description: "Nombre oficial de la carta en inglés."
+        tests:
+          - not_null
+
+      - name: card_type
+        description: "Tipo de carta: Normal Monster, Effect Monster, Spell Card, etc."
+        tests:
+          - not_null
+
+      - name: race
+        description: "Raza del monstruo o subtipo de Spell/Trap."
+
+      - name: attribute
+        description: "Atributo del monstruo: DARK, EARTH, FIRE, LIGHT, WATER, WIND, DIVINE."
+
+      - name: archetype
+        description: "Arquetipo al que pertenece la carta. Null si no pertenece a ninguno."
+
+      - name: atk
+        description: "Puntos de ataque del monstruo. Null para Spell y Trap."
+
+      - name: def
+        description: "Puntos de defensa del monstruo. Null para Link Monsters, Spell y Trap."
+
+      - name: level
+        description: "Nivel o Rango del monstruo. Null para Link Monsters, Spell y Trap."
+
+      - name: has_effect
+        description: "Indica si la carta tiene efecto real: 1 tiene efecto, 0 no tiene efecto."
+
+      - name: is_monster
+        description: "TRUE si la carta es cualquier tipo de monstruo."
+        tests:
+          - not_null
+
+      - name: is_spell
+        description: "TRUE si la carta es de tipo Spell."
+        tests:
+          - not_null
+
+      - name: is_trap
+        description: "TRUE si la carta es de tipo Trap."
+        tests:
+          - not_null
+
+      - name: is_extra_deck
+        description: "TRUE si la carta pertenece al Extra Deck."
+        tests:
+          - not_null
+
+      - name: tcg_date
+        description: "Fecha de lanzamiento original en el TCG."
+
+      - name: ocg_date
+        description: "Fecha de lanzamiento original en el OCG."
+
+      - name: total_sets
+        description: "Número total de sets en los que aparece la carta."
+
+      - name: total_artworks
+        description: "Número total de artworks disponibles para la carta."
+
+      - name: image_url
+        description: "URL de la imagen principal de la carta para visualización."
+
+  - name: dim_sets
+    description: >
+      Dimensión de sets de cartas Yu-Gi-Oh.
+      Una fila por cada combinación única de carta, set y rareza.
+      Usada en CU4 para analizar el valor de la colección por set y rareza.
+      Se relaciona con dim_cards a través de card_id.
+    config:
+      tags: ['gold', 'dimension']
+    columns:
+      - name: set_sk
+        description: "Surrogate key numérica generada en Gold con ROW_NUMBER()."
+        tests:
+          - not_null
+          - unique
+
+      - name: card_id
+        description: "Passcode de la carta. FK hacia dim_cards."
+        tests:
+          - not_null
+
+      - name: card_name
+        description: "Nombre de la carta."
+        tests:
+          - not_null
+
+      - name: set_name
+        description: "Nombre completo del set."
+        tests:
+          - not_null
+
+      - name: set_code
+        description: "Código del set más número de carta."
+        tests:
+          - not_null
+
+      - name: set_rarity
+        description: "Rareza de la carta en este set."
+        tests:
+          - not_null
+
+      - name: set_rarity_code
+        description: "Código abreviado de la rareza."
+
+      - name: set_price
+        description: "Precio de la carta en este set en dólares."
+
+      - name: is_high_rarity
+        description: "TRUE si la rareza es Secret Rare, Ultra Rare o superior."
+        tests:
+          - not_null
+
+  - name: dim_archetypes
+    description: >
+      Dimensión de arquetipos de cartas Yu-Gi-Oh.
+      Una fila por arquetipo con métricas agregadas calculadas en Gold.
+      Usada en CU3 para analizar popularidad y demanda por arquetipo.
+      Se relaciona con fact_popularity a través de archetype_sk.
+    config:
+      tags: ['gold', 'dimension']
+    columns:
+      - name: archetype_sk
+        description: "Surrogate key numérica generada en Gold con ROW_NUMBER()."
+        tests:
+          - not_null
+          - unique
+
+      - name: archetype_name
+        description: "Nombre del arquetipo."
+        tests:
+          - not_null
+          - unique
+
+      - name: total_cartas
+        description: "Número total de cartas que pertenecen a este arquetipo."
+        tests:
+          - not_null
+
+      - name: attribute_mas_comun
+        description: "Atributo más frecuente entre las cartas del arquetipo."
+
+      - name: race_mas_comun
+        description: "Raza más frecuente entre las cartas del arquetipo."
+
+      - name: tiene_banned
+        description: "TRUE si alguna carta del arquetipo está Forbidden en el TCG."
+        tests:
+          - not_null
+
+      - name: tiene_limited
+        description: "TRUE si alguna carta del arquetipo está Limited en el TCG."
+        tests:
+          - not_null

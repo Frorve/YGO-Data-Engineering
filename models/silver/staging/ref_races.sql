@@ -1,0 +1,110 @@
+{{
+    config(
+        materialized = 'table',
+        schema       = 'silver',
+        alias        = 'ref_races',
+        tags         = ['silver', 'ref']
+    )
+}}
+
+/*
+    Referencia — ref_races
+    ──────────────────────
+    Catálogo estático de razas de monstruos y subtipos de Spell, Trap y Skill.
+    Se reconstruye completo en cada ejecución.
+    No tiene incrementalidad.
+*/
+
+SELECT race_id, descripcion, aplica_a FROM (VALUES
+    -- ── Razas de monstruo ─────────────────────────────────────────────────
+    ('Aqua',            'Criaturas acuáticas como peces y seres del agua',          'Monster'),
+    ('Beast',           'Bestias y animales salvajes',                              'Monster'),
+    ('Beast-Warrior',   'Bestias con características guerreras',                    'Monster'),
+    ('Creator-God',     'Dioses creadores, los más poderosos del juego',            'Monster'),
+    ('Creator God',     'Dioses creadores supremos, por encima de los Divine-Beast','Monster'),
+    ('Cyberse',         'Criaturas digitales del mundo virtual',                    'Monster'),
+    ('Dinosaur',        'Dinosaurios y criaturas prehistóricas',                    'Monster'),
+    ('Divine-Beast',    'Bestias divinas, incluye los Dioses Egipcios',             'Monster'),
+    ('Dragon',          'Dragones de todo tipo',                                    'Monster'),
+    ('Fairy',           'Seres celestiales y angélicos',                            'Monster'),
+    ('Fiend',           'Demonios y criaturas del inframundo',                      'Monster'),
+    ('Fish',            'Peces y criaturas marinas menores',                        'Monster'),
+    ('Illusion',        'Criaturas de ilusión, tipo introducido recientemente',     'Monster'),
+    ('Insect',          'Insectos y artrópodos',                                    'Monster'),
+    ('Machine',         'Máquinas y robots',                                        'Monster'),
+    ('Plant',           'Plantas y criaturas vegetales',                            'Monster'),
+    ('Psychic',         'Seres con poderes mentales y psíquicos',                   'Monster'),
+    ('Pyro',            'Criaturas de fuego y llamas',                              'Monster'),
+    ('Reptile',         'Reptiles y serpientes',                                    'Monster'),
+    ('Rock',            'Criaturas de piedra y minerales',                          'Monster'),
+    ('Sea Serpent',     'Serpientes marinas y criaturas de las profundidades',      'Monster'),
+    ('Spellcaster',     'Magos y usuarios de magia',                                'Monster'),
+    ('Thunder',         'Criaturas eléctricas y del trueno',                        'Monster'),
+    ('Warrior',         'Guerreros y soldados humanoides',                          'Monster'),
+    ('Winged Beast',    'Criaturas voladoras con alas',                             'Monster'),
+    ('Wyrm',            'Criaturas similares a dragones pero distintas',            'Monster'),
+    ('Zombie',          'Muertos vivientes y criaturas no muertas',                 'Monster'),
+    -- ── Subtipos de Spell ─────────────────────────────────────────────────
+    ('Normal',          'Spell o Trap Normal, se activa y va al cementerio',        'Spell'),
+    ('Field',           'Spell de Campo, modifica las condiciones del terreno',     'Spell'),
+    ('Equip',           'Spell de Equipo, se equipa a un monstruo',                 'Spell'),
+    ('Continuous',      'Spell Continua, permanece en el campo activa',             'Spell'),
+    ('Quick-Play',      'Spell de Juego Rápido, activable en turno del rival',      'Spell'),
+    ('Ritual',          'Spell Ritual, necesaria para invocar monstruos Ritual',    'Spell'),
+    -- ── Subtipos de Trap ──────────────────────────────────────────────────
+    ('Counter',         'Trap Counter, responde a activaciones de cartas',          'Trap'),
+    -- ── Personajes de Skill Cards (formato Speed Duel) ────────────────────
+    ('Abidos the Th',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Adrian Gecko',    'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Alexis Rhodes',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Amnael',          'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Andrew',          'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Arkana',          'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Aster Phoenix',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Axel Brodie',     'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Bastion Misaw',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Bonz',            'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Camula',          'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Chazz Princet',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Christine',       'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Chumley Huffi',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('David',           'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Don Zaloog',      'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Dr. Vellian C',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Emma',            'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Espa Roba',       'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Ishizu',          'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Ishizu Ishtar',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Jaden Yuki',      'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Jesse Anderso',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Joey',            'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Joey Wheeler',    'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Kagemaru',        'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Kaiba',           'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Keith',           'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Lumis Umbra',     'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Lumis and Umb',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Mai',             'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Mai Valentine',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Mako',            'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Nightshroud',     'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Odion',           'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Paradox Broth',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Pegasus',         'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Rex',             'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Seto Kaiba',      'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Syrus Truesda',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Tania',           'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Tea Gardner',     'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('The Supreme K',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Thelonious Vi',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Titan',           'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Tyranno Hassl',   'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Weevil',          'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Yami Bakura',     'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Yami Marik',      'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Yami Yugi',       'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Yubel',           'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Yugi',            'Personaje de Speed Duel — Skill Card',                     'Skill'),
+    ('Zane Truesdal',   'Personaje de Speed Duel — Skill Card',                     'Skill')
+) AS t(race_id, descripcion, aplica_a)

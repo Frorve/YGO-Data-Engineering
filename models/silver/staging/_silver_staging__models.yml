@@ -1,0 +1,508 @@
+version: 2
+
+models:
+
+  # ============================================================
+  # TABLAS DE REFERENCIA (sin incrementalidad)
+  # ============================================================
+
+  - name: ref_card_types
+    description: >
+      Catálogo de tipos de carta disponibles en el universo Yu-Gi-Oh.
+      Tabla de referencia estática con todos los tipos conocidos de la API de YGOPRODeck.
+      No tiene incrementalidad. Se reconstruye completa en cada ejecución.
+    config:
+      tags: ['silver', 'ref']
+    columns:
+      - name: card_type_id
+        description: "Identificador del tipo de carta. Coincide con el valor exacto devuelto por la API."
+        tests:
+          - not_null
+          - unique
+
+      - name: descripcion
+        description: "Descripción legible del tipo de carta."
+        tests:
+          - not_null
+
+      - name: categoria
+        description: "Agrupación del tipo de carta. Valores posibles: Monster, Spell, Trap, Token, Skill."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Monster', 'Spell', 'Trap', 'Token', 'Skill']
+
+  - name: ref_races
+    description: >
+      Catálogo de razas de monstruos y subtipos de Spell y Trap en Yu-Gi-Oh.
+      Para monstruos indica el tipo de criatura. Para Spell y Trap indica el subtipo
+      de la carta (Normal, Field, Equip, Counter, etc.).
+      Tabla de referencia estática. No tiene incrementalidad.
+    config:
+      tags: ['silver', 'ref']
+    columns:
+      - name: race_id
+        description: "Identificador de la raza o subtipo. Coincide con el valor exacto devuelto por la API."
+        tests:
+          - not_null
+          - unique
+
+      - name: descripcion
+        description: "Descripción legible de la raza o subtipo."
+        tests:
+          - not_null
+
+      - name: aplica_a
+        description: "Indica a qué tipo de carta aplica esta raza. Valores posibles: Monster, Spell, Trap."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Monster', 'Spell', 'Trap', 'Skill']
+
+  - name: ref_attributes
+    description: >
+      Catálogo de atributos de los monstruos en Yu-Gi-Oh.
+      El atributo determina la naturaleza elemental del monstruo.
+      Solo aplica a cartas de tipo monstruo, las cartas Spell y Trap no tienen atributo.
+      Tabla de referencia estática. No tiene incrementalidad.
+    config:
+      tags: ['silver', 'ref']
+    columns:
+      - name: attribute_id
+        description: "Identificador del atributo. Coincide con el valor exacto devuelto por la API."
+        tests:
+          - not_null
+          - unique
+
+      - name: descripcion
+        description: "Descripción legible del atributo."
+        tests:
+          - not_null
+
+  - name: ref_ban_status
+    description: >
+      Catálogo de estados posibles en el ban list de Yu-Gi-Oh.
+      Aplica a los tres formatos principales: TCG, OCG y GOAT.
+      El estado determina cuántas copias de una carta se pueden incluir en el mazo.
+      Tabla de referencia estática. No tiene incrementalidad.
+    config:
+      tags: ['silver', 'ref']
+    columns:
+      - name: ban_status_id
+        description: "Identificador del estado de ban. Coincide con el valor exacto devuelto por la API."
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              arguments:
+                values: ['Forbidden', 'Limited', 'Semi-Limited', 'Unlimited']
+
+      - name: descripcion
+        description: "Descripción legible del estado de ban."
+        tests:
+          - not_null
+
+      - name: copias_permitidas
+        description: "Número máximo de copias permitidas en el mazo."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3]
+
+  - name: ref_archetypes
+    description: >
+      Catálogo de arquetipos existentes en Yu-Gi-Oh extraídos de los datos de la API.
+      Se construye dinámicamente desde bronze_flat_cards.
+      Konami añade nuevos arquetipos constantemente.
+      No tiene incrementalidad, se reconstruye completa en cada ejecución.
+    config:
+      tags: ['silver', 'ref']
+    columns:
+      - name: archetype_id
+        description: "Nombre del arquetipo. Coincide con el valor exacto devuelto por la API."
+        tests:
+          - not_null
+          - unique
+
+      - name: descripcion
+        description: "Descripción del arquetipo. Igual al archetype_id ya que la API no provee descripción adicional."
+        tests:
+          - not_null
+
+  # ============================================================
+  # TABLAS DE STAGING
+  # ============================================================
+
+  - name: stg_cards
+    description: >
+      Staging de cartas. Limpia y tipifica los campos de bronze_flat_cards
+      que tienen evidencia de uso en los casos de uso actuales.
+      Una fila por cada ingesta de una carta concreta.
+      Materializada como table, se reconstruye completa en cada ejecución.
+    config:
+      tags: ['silver', 'staging']
+    columns:
+      - name: ingesta_id
+        description: "Identificador único de la ingesta que generó este registro."
+        tests:
+          - not_null
+
+      - name: card_id
+        description: "Passcode de la carta. Identificador único en la API de YGOPRODeck."
+        tests:
+          - not_null
+
+      - name: ingesta_ts
+        description: "Timestamp UTC del momento de la ingesta."
+        tests:
+          - not_null
+
+      - name: es_mock
+        description: "Indica si el registro procede de datos simulados."
+        tests:
+          - not_null
+
+      - name: card_name
+        description: "Nombre oficial de la carta en inglés."
+        tests:
+          - not_null
+
+      - name: card_type_id
+        description: "Tipo de carta. FK hacia ref_card_types."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('ref_card_types')
+              field: card_type_id
+
+      - name: race_id
+        description: "Raza del monstruo o subtipo de Spell/Trap. FK hacia ref_races."
+        tests:
+          - relationships:
+              to: ref('ref_races')
+              field: race_id
+              config:
+                where: "race_id IS NOT NULL"
+
+      - name: attribute_id
+        description: "Atributo del monstruo. FK hacia ref_attributes. Null para Spell y Trap."
+        tests:
+          - relationships:
+              to: ref('ref_attributes')
+              field: attribute_id
+              config:
+                where: "attribute_id IS NOT NULL"
+
+      - name: archetype_id
+        description: "Arquetipo de la carta. FK hacia ref_archetypes. Null si no pertenece a ninguno."
+        tests:
+          - relationships:
+              to: ref('ref_archetypes')
+              field: archetype_id
+              config:
+                where: "archetype_id IS NOT NULL"
+
+      - name: atk
+        description: "Puntos de ataque del monstruo. Null para Spell y Trap."
+
+      - name: def
+        description: "Puntos de defensa del monstruo. Null para Link Monsters, Spell y Trap."
+
+      - name: level
+        description: "Nivel o Rango del monstruo. Null para Link Monsters, Spell y Trap."
+
+      - name: has_effect
+        description: "Indica si la carta tiene efecto real: 1 tiene efecto, 0 no tiene efecto."
+        tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+              config:
+                where: "has_effect IS NOT NULL"
+
+      - name: views
+        description: "Total de vistas acumuladas de la carta en YGOPRODeck."
+
+      - name: viewsweek
+        description: "Vistas de la carta durante la semana actual."
+
+      - name: upvotes
+        description: "Número de votos positivos en YGOPRODeck."
+
+      - name: downvotes
+        description: "Número de votos negativos en YGOPRODeck."
+
+      - name: tcg_date
+        description: "Fecha de lanzamiento original de la carta en el TCG."
+
+      - name: ocg_date
+        description: "Fecha de lanzamiento original de la carta en el OCG."
+
+      - name: is_monster
+        description: "TRUE si la carta es cualquier tipo de monstruo."
+        tests:
+          - not_null
+
+      - name: is_spell
+        description: "TRUE si la carta es de tipo Spell."
+        tests:
+          - not_null
+
+      - name: is_trap
+        description: "TRUE si la carta es de tipo Trap."
+        tests:
+          - not_null
+
+      - name: is_extra_deck
+        description: "TRUE si la carta pertenece al Extra Deck: Fusion, Synchro, XYZ o Link."
+        tests:
+          - not_null
+
+  - name: stg_card_prices
+    description: >
+      Staging de precios. Extrae y limpia los precios de cada carta
+      procedentes de bronze_flat_cards.
+      Separado de stg_cards porque los precios cambian con el tiempo
+      y alimentan directamente los snapshots de precios y el cálculo del IVA.
+      Una fila por cada ingesta de una carta concreta.
+      Materializada como table, se reconstruye completa en cada ejecución.
+    config:
+      tags: ['silver', 'staging']
+    columns:
+      - name: ingesta_id
+        description: "Identificador único de la ingesta que generó este registro."
+        tests:
+          - not_null
+
+      - name: card_id
+        description: "Passcode de la carta."
+        tests:
+          - not_null
+
+      - name: ingesta_ts
+        description: "Timestamp UTC del momento de la ingesta."
+        tests:
+          - not_null
+
+      - name: es_mock
+        description: "Indica si el registro procede de datos simulados."
+        tests:
+          - not_null
+
+      - name: cardmarket_price
+        description: "Precio en Cardmarket en euros. Precio de compra de referencia para el arbitraje."
+
+      - name: tcgplayer_price
+        description: "Precio en TCGPlayer en dólares."
+
+      - name: ebay_price
+        description: "Precio en eBay en dólares."
+
+      - name: amazon_price
+        description: "Precio en Amazon en dólares."
+
+      - name: coolstuffinc_price
+        description: "Precio en CoolStuffInc en dólares."
+
+      - name: best_sell_price
+        description: "Mejor precio de venta entre eBay, TCGPlayer y Amazon en dólares."
+
+      - name: price_margin_pct
+        description: >
+          Margen porcentual de arbitraje entre el mejor precio de venta
+          y el precio de compra en Cardmarket.
+          Calculado como (best_sell_price - cardmarket_price) / cardmarket_price.
+          Base del IVA en Gold.
+
+  - name: stg_card_banlists
+    description: >
+      Staging de banlists. Extrae y limpia el estado de ban de cada carta
+      procedente de bronze_flat_cards.
+      Separado de stg_cards porque el banlist cambia cada aproximadamente
+      3 meses con cada nueva lista de Konami y alimenta directamente
+      los snapshots de banlists y el cálculo del IVA en Gold.
+      Una fila por cada ingesta de una carta concreta.
+      Materializada como table, se reconstruye completa en cada ejecución.
+    config:
+      tags: ['silver', 'staging']
+    columns:
+      - name: ingesta_id
+        description: "Identificador único de la ingesta que generó este registro."
+        tests:
+          - not_null
+
+      - name: card_id
+        description: "Passcode de la carta."
+        tests:
+          - not_null
+
+      - name: ingesta_ts
+        description: "Timestamp UTC del momento de la ingesta."
+        tests:
+          - not_null
+
+      - name: es_mock
+        description: "Indica si el registro procede de datos simulados."
+        tests:
+          - not_null
+
+      - name: ban_tcg
+        description: "Estado en el ban list del TCG. FK hacia ref_ban_status. Null si no tiene restricción."
+        tests:
+          - relationships:
+              to: ref('ref_ban_status')
+              field: ban_status_id
+              config:
+                where: "ban_tcg IS NOT NULL"
+
+      - name: ban_ocg
+        description: "Estado en el ban list del OCG. FK hacia ref_ban_status. Null si no tiene restricción."
+        tests:
+          - relationships:
+              to: ref('ref_ban_status')
+              field: ban_status_id
+              config:
+                where: "ban_ocg IS NOT NULL"
+
+      - name: ban_goat
+        description: "Estado en el ban list del formato GOAT. Null si no tiene restricción."
+
+      - name: is_banned_anywhere
+        description: "TRUE si la carta está Forbidden en TCG o en OCG."
+        tests:
+          - not_null
+
+      - name: ban_penalty_tcg
+        description: >
+          Factor de penalización del IVA según el estado en el ban list del TCG.
+          Forbidden = 0.0, Limited = 0.4, Semi-Limited = 0.7, Unlimited = 1.0.
+        tests:
+          - not_null
+
+  - name: stg_card_sets
+    description: >
+      Staging de sets. Limpia y tipifica los registros procedentes de
+      bronze_flat_card_sets. Una fila por cada combinación de carta, set y rareza.
+      Usada en CU4 para valoración de colección y en CU2 para liquidez por rareza.
+      Materializada como table, se reconstruye completa en cada ejecución.
+    config:
+      tags: ['silver', 'staging']
+    columns:
+      - name: ingesta_id
+        description: "Identificador único de la ingesta que generó este registro."
+        tests:
+          - not_null
+
+      - name: card_id
+        description: "Passcode de la carta."
+        tests:
+          - not_null
+
+      - name: ingesta_ts
+        description: "Timestamp UTC de la ingesta."
+        tests:
+          - not_null
+
+      - name: es_mock
+        description: "Indica si el registro procede de datos simulados."
+        tests:
+          - not_null
+
+      - name: card_name
+        description: "Nombre de la carta."
+        tests:
+          - not_null
+
+      - name: set_name
+        description: "Nombre completo del set."
+        tests:
+          - not_null
+
+      - name: set_code
+        description: "Código del set más número de carta."
+        tests:
+          - not_null
+
+      - name: set_rarity
+        description: "Rareza de la carta en este set."
+        tests:
+          - not_null
+
+      - name: set_rarity_code
+        description: "Código abreviado de la rareza."
+
+      - name: set_price
+        description: "Precio de la carta en este set en dólares según TCGPlayer."
+
+      - name: is_high_rarity
+        description: "TRUE si la rareza es Secret Rare, Ultra Rare o superior."
+        tests:
+          - not_null
+
+  - name: stg_card_images
+    description: >
+      Staging de imágenes. Limpia y tipifica los registros procedentes de
+      bronze_flat_card_images. Una fila por cada imagen o artwork de cada carta.
+      Usada en CU4 para mostrar la imagen de cada carta en la valoración
+      de colección.
+      Materializada como table, se reconstruye completa en cada ejecución.
+    config:
+      tags: ['silver', 'staging']
+    columns:
+      - name: ingesta_id
+        description: "Identificador único de la ingesta que generó este registro."
+        tests:
+          - not_null
+
+      - name: card_id
+        description: "Passcode de la carta."
+        tests:
+          - not_null
+
+      - name: ingesta_ts
+        description: "Timestamp UTC de la ingesta."
+        tests:
+          - not_null
+
+      - name: es_mock
+        description: "Indica si el registro procede de datos simulados."
+        tests:
+          - not_null
+
+      - name: card_name
+        description: "Nombre de la carta."
+        tests:
+          - not_null
+
+      - name: artwork_index
+        description: "Índice del artwork: 0 es el arte principal, mayor que 0 son artes alternativos."
+        tests:
+          - not_null
+
+      - name: image_id
+        description: "ID de la imagen en el servidor de YGOPRODeck."
+        tests:
+          - not_null
+
+      - name: image_url
+        description: "URL de la imagen en tamaño completo."
+        tests:
+          - not_null
+
+      - name: image_url_small
+        description: "URL de la imagen en tamaño reducido."
+        tests:
+          - not_null
+
+      - name: image_url_cropped
+        description: "URL de la imagen recortada mostrando solo el arte."
+        tests:
+          - not_null
+
+      - name: is_main_artwork
+        description: "TRUE si es el arte principal de la carta (artwork_index = 0)."
+        tests:
+          - not_null
